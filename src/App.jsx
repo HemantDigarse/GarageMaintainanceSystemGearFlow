@@ -1,11 +1,11 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Vehicles from './pages/Vehicles'
 import Services from './pages/Services'
-
 import Invoices from './pages/Invoices'
 import Layout from './components/Layout'
 
@@ -18,6 +18,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
       <Route path="/" element={
         <PrivateRoute>
           <Layout />

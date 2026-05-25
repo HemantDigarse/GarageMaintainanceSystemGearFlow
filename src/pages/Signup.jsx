@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { login } from '../api/authApi'
+import { signup } from '../api/authApi'
 
-export default function Login() {
+export default function Signup() {
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [role, setRole] = useState('GARAGE_OWNER')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
@@ -13,63 +15,87 @@ export default function Login() {
 
   const handle = async (e) => {
     e.preventDefault()
-    setLoading(true)
     setErr('')
+
+    if (password !== confirmPassword) {
+      setErr('Passwords do not match.')
+      return
+    }
+
+    if (password.length < 6) {
+      setErr('Password must be at least 6 characters.')
+      return
+    }
+
+    setLoading(true)
     try {
-      const res = await login({ email, password })
-      if (res?.status === 'LOGIN_SUCCESS') {
+      const res = await signup({ name, email, password, role })
+      if (res?.status === 'SIGNUP_SUCCESS') {
         localStorage.setItem('token', 'auth-token-' + Date.now())
-        localStorage.setItem('username', res.name || email.split('@')[0])
+        localStorage.setItem('username', res.name || name)
         localStorage.setItem('userRole', res.role || role)
         localStorage.setItem('userEmail', res.email || email)
         nav('/')
-      } else if (typeof res === 'string' && res === 'LOGIN_SUCCESS') {
-        localStorage.setItem('token', 'auth-token-' + Date.now())
-        localStorage.setItem('username', email.split('@')[0])
-        localStorage.setItem('userRole', role)
-        localStorage.setItem('userEmail', email)
-        nav('/')
       } else {
-        setErr('Invalid credentials. Please try again.')
+        setErr('Registration failed. Please try again.')
       }
     } catch (error) {
       const msg = error?.response?.data
-      if (msg === 'INVALID_PASSWORD') {
-        setErr('Incorrect password. Please try again.')
-      } else if (msg === 'INVALID_EMAIL') {
-        setErr('No account found with this email.')
+      if (msg === 'EMAIL_ALREADY_EXISTS') {
+        setErr('An account with this email already exists.')
+      } else if (msg === 'INVALID_ROLE') {
+        setErr('Invalid role selected.')
       } else {
-        setErr(typeof msg === 'string' ? msg : 'Login failed. Please check your credentials.')
+        setErr(typeof msg === 'string' ? msg : 'Registration failed. Please try again.')
       }
     } finally {
       setLoading(false)
     }
   }
 
+  // Password strength indicator
+  const getPasswordStrength = () => {
+    if (!password) return { level: 0, label: '', color: '' }
+    let score = 0
+    if (password.length >= 6) score++
+    if (password.length >= 10) score++
+    if (/[A-Z]/.test(password)) score++
+    if (/[0-9]/.test(password)) score++
+    if (/[^A-Za-z0-9]/.test(password)) score++
+
+    if (score <= 1) return { level: 1, label: 'Weak', color: 'bg-red-500' }
+    if (score <= 2) return { level: 2, label: 'Fair', color: 'bg-orange-500' }
+    if (score <= 3) return { level: 3, label: 'Good', color: 'bg-amber-500' }
+    if (score <= 4) return { level: 4, label: 'Strong', color: 'bg-green-500' }
+    return { level: 5, label: 'Excellent', color: 'bg-emerald-400' }
+  }
+
+  const strength = getPasswordStrength()
+
   return (
     <div className="auth-bg grid-pattern min-h-screen flex items-center justify-center p-4">
       {/* Decorative Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/3 rounded-full blur-[100px]" />
+        <div className="absolute top-20 right-20 w-72 h-72 bg-blue-500/5 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 left-10 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-500/3 rounded-full blur-[100px]" />
       </div>
 
       <div className="w-full max-w-[440px] relative z-10">
         {/* Logo & Branding */}
         <div className="text-center mb-8 animate-slide-down">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/20 mb-4">
-            <svg className="w-8 h-8 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/20 mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Garage Management
+            Create Account
           </h1>
-          <p className="text-slate-400 text-sm">Sign in to manage your garage operations</p>
+          <p className="text-slate-400 text-sm">Join the garage management platform</p>
         </div>
 
-        {/* Login Card */}
+        {/* Signup Card */}
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/20 animate-slide-up">
           {/* Role Selector */}
           <div className="flex gap-2 mb-6 p-1 bg-slate-800/60 rounded-xl">
@@ -116,7 +142,28 @@ export default function Login() {
           )}
 
           {/* Form */}
-          <form onSubmit={handle} className="space-y-5">
+          <form onSubmit={handle} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <input
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="John Doe"
+                  type="text"
+                  required
+                  className="input-field w-full pl-10 pr-4 py-3 rounded-xl text-sm font-medium"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                 Email Address
@@ -151,7 +198,7 @@ export default function Login() {
                 <input
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Min. 6 characters"
                   type={showPassword ? 'text' : 'password'}
                   required
                   className="input-field w-full pl-10 pr-12 py-3 rounded-xl text-sm font-medium"
@@ -173,12 +220,69 @@ export default function Login() {
                   )}
                 </button>
               </div>
+              {/* Password Strength */}
+              {password && (
+                <div className="mt-2 animate-fade-in">
+                  <div className="flex gap-1 mb-1">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                        i <= strength.level ? strength.color : 'bg-slate-700'
+                      }`} />
+                    ))}
+                  </div>
+                  <p className={`text-xs font-medium ${
+                    strength.level <= 1 ? 'text-red-400' :
+                    strength.level <= 2 ? 'text-orange-400' :
+                    strength.level <= 3 ? 'text-amber-400' :
+                    'text-green-400'
+                  }`}>
+                    {strength.label}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <input
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className={`input-field w-full pl-10 pr-4 py-3 rounded-xl text-sm font-medium ${
+                    confirmPassword && confirmPassword !== password ? 'border-red-500/50' :
+                    confirmPassword && confirmPassword === password ? 'border-green-500/50' : ''
+                  }`}
+                />
+                {confirmPassword && (
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center">
+                    {confirmPassword === password ? (
+                      <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-3 rounded-xl text-sm font-bold tracking-wide flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="btn-primary w-full py-3 rounded-xl text-sm font-bold tracking-wide flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mt-6"
             >
               {loading ? (
                 <>
@@ -186,11 +290,11 @@ export default function Login() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Signing in...
+                  Creating Account...
                 </>
               ) : (
                 <>
-                  Sign In
+                  Create Account
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
@@ -205,19 +309,19 @@ export default function Login() {
               <div className="w-full border-t border-slate-700/50"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-[#1e293b] text-slate-500 font-medium">New to the platform?</span>
+              <span className="px-3 bg-[#1e293b] text-slate-500 font-medium">Already have an account?</span>
             </div>
           </div>
 
-          {/* Sign Up Link */}
+          {/* Sign In Link */}
           <Link
-            to="/signup"
+            to="/login"
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-700/50 text-slate-300 text-sm font-semibold hover:bg-slate-800/50 hover:border-amber-500/30 hover:text-amber-400 transition-all duration-200"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
             </svg>
-            Create an Account
+            Sign In Instead
           </Link>
         </div>
 

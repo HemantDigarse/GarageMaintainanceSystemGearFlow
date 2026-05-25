@@ -1,4 +1,3 @@
-// src/pages/Services.jsx
 import React, { useEffect, useState } from 'react';
 import { listServices, createService, updateService, deleteService } from '../api/servicesApi';
 
@@ -10,17 +9,13 @@ export default function Services() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
 
   const fetch = async () => {
     setLoading(true);
-    try {
-      const data = await listServices();
-      setList(Array.isArray(data) ? data : []);
-    } catch {
-      setError('Failed to load services');
-    } finally {
-      setLoading(false);
-    }
+    try { const data = await listServices(); setList(Array.isArray(data) ? data : []); }
+    catch { setError('Failed to load services'); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => { fetch(); }, []);
@@ -28,44 +23,37 @@ export default function Services() {
   const change = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const create = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    try { 
-      await createService(form); 
-      setForm({ name: '', description: '', price: '' }); 
-      setSuccess(' Service created successfully!');
-      await fetch(); 
+    e.preventDefault(); setError(''); setSuccess('');
+    try {
+      await createService(form);
+      setForm({ name: '', description: '', price: '' });
+      setSuccess('Service created!'); setShowForm(false); await fetch();
       setTimeout(() => setSuccess(''), 3000);
-    }
-    catch { setError(' Create failed'); }
+    } catch { setError('Create failed'); }
   };
 
-  const startEdit = (s) => { setEditing(s.id); setForm({ name: s.name || '', description: s.description || '', price: s.price || '' }); };
+  const startEdit = (s) => {
+    setEditing(s.id);
+    setForm({ name: s.name || '', description: s.description || '', price: s.price || '' });
+    setShowForm(true);
+  };
 
   const save = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    try { 
-      await updateService(editing, form); 
-      setEditing(null); 
-      setForm({ name: '', description: '', price: '' }); 
-      setSuccess(' Service updated successfully!');
-      await fetch(); 
+    e.preventDefault(); setError(''); setSuccess('');
+    try {
+      await updateService(editing, form);
+      setEditing(null); setForm({ name: '', description: '', price: '' });
+      setSuccess('Service updated!'); setShowForm(false); await fetch();
       setTimeout(() => setSuccess(''), 3000);
-    }
-    catch { setError(' Update failed'); }
+    } catch { setError('Update failed'); }
   };
 
-  const remove = async (id) => { 
-    if (!window.confirm(' Are you sure you want to delete this service?')) return; 
-    try { 
-      await deleteService(id); 
-      setSuccess(' Service deleted successfully!');
-      await fetch(); 
+  const remove = async (id) => {
+    if (!window.confirm('Delete this service?')) return;
+    try {
+      await deleteService(id); setSuccess('Service deleted!'); await fetch();
       setTimeout(() => setSuccess(''), 3000);
-    } catch { setError(' Delete failed'); } 
+    } catch { setError('Delete failed'); }
   };
 
   const filteredList = list.filter(s =>
@@ -74,130 +62,122 @@ export default function Services() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-fade-in">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800/90 to-slate-700/90 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-slate-600">
-        <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
-          Services Management
-        </h1>
-        <p className="text-slate-300">Manage your service offerings</p>
+      <div className="glass rounded-xl p-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Services</h1>
+          <p className="text-sm text-slate-400">Manage your service offerings</p>
+        </div>
+        <button onClick={() => { setShowForm(!showForm); setEditing(null); setForm({ name: '', description: '', price: '' }); }}
+          className="btn-primary px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Add Service
+        </button>
       </div>
 
-      {/* Success/Error Messages */}
+      {/* Alerts */}
       {success && (
-        <div className="p-4 bg-green-500/20 border border-green-500 rounded-lg text-green-200 animate-pulse">
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium flex items-center gap-2 animate-scale-in">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
           {success}
         </div>
       )}
       {error && (
-        <div className="p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-200">
+        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium flex items-center gap-2 animate-scale-in">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           {error}
         </div>
       )}
 
-      {/* Add/Edit Form */}
-      <div className="bg-slate-800/90 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-slate-600">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <span>{editing ? '' : ''}</span>
-          {editing ? 'Edit Service' : 'Add New Service'}
-        </h2>
-        <form onSubmit={editing ? save : create} className="grid gap-4 grid-cols-1 md:grid-cols-6">
-          <input 
-            name="name" 
-            value={form.name} 
-            onChange={change} 
-            placeholder=" Service Name" 
-            required
-            className="md:col-span-2 p-3 rounded-lg bg-white border-2 border-slate-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium" 
-          />
-          <input 
-            name="description" 
-            value={form.description} 
-            onChange={change} 
-            placeholder=" Description" 
-            required
-            className="md:col-span-2 p-3 rounded-lg bg-white border-2 border-slate-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium" 
-          />
-          <input 
-            name="price" 
-            value={form.price} 
-            onChange={change} 
-            placeholder="Price" 
-            type="number"
-            step="0.01"
-            required
-            className="p-3 rounded-lg bg-white border-2 border-slate-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium" 
-          />
-          <div className="flex gap-2">
-            <button 
-              type="submit"
-              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-3 rounded-lg font-medium hover:scale-105 active:scale-95 transition-transform shadow-lg"
-            >
-              {editing ? ' Save' : ' Create'}
-            </button>
-            {editing && (
-              <button 
-                type="button" 
-                onClick={() => { setEditing(null); setForm({ name: '', description: '', price: '' }); }} 
-                className="px-4 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors"
-              >
-                
+      {/* Form */}
+      {showForm && (
+        <div className="glass rounded-xl p-6 animate-slide-down">
+          <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            {editing ? 'Edit Service' : 'New Service'}
+          </h2>
+          <form onSubmit={editing ? save : create} className="grid gap-3 grid-cols-1 md:grid-cols-4">
+            <input name="name" value={form.name} onChange={change} placeholder="Service Name" required className="input-field p-3 rounded-xl text-sm" />
+            <input name="description" value={form.description} onChange={change} placeholder="Description" required className="input-field p-3 rounded-xl text-sm" />
+            <input name="price" value={form.price} onChange={change} placeholder="Price" type="number" step="0.01" required className="input-field p-3 rounded-xl text-sm" />
+            <div className="flex gap-2">
+              <button type="submit" className="flex-1 btn-primary px-4 py-3 rounded-xl text-sm font-semibold">{editing ? 'Save' : 'Create'}</button>
+              <button type="button"
+                onClick={() => { setShowForm(false); setEditing(null); setForm({ name: '', description: '', price: '' }); }}
+                className="px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border border-slate-700/50">
+                Cancel
               </button>
-            )}
-          </div>
-        </form>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="glass rounded-xl p-3">
+        <div className="relative">
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+            placeholder="Search services..." className="input-field w-full pl-10 pr-4 py-2.5 rounded-lg text-sm" />
+        </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-slate-800/90 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-slate-600">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          placeholder="Search services..."
-          className="w-full p-3 rounded-lg bg-white border-2 border-slate-300 text-black placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium"
-        />
-      </div>
-
-      {/* Services Table */}
-      <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl shadow-xl border border-slate-600 overflow-hidden">
+      {/* Table */}
+      <div className="glass rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center p-12">
-            <div className="text-center">
-              <div className="animate-spin text-6xl mb-4"></div>
-              <div className="text-xl text-white">Loading services...</div>
-            </div>
+            <svg className="animate-spin w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gradient-to-r from-indigo-600 to-purple-600">
-                <tr>
-                  <th className="p-4 text-left text-white font-bold"> Service Name</th>
-                  <th className="p-4 text-left text-white font-bold"> Description</th>
-                  <th className="p-4 text-left text-white font-bold"> Price</th>
-                  <th className="p-4 text-left text-white font-bold"> Actions</th>
+              <thead>
+                <tr className="border-b border-slate-800/50">
+                  <th className="p-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Service</th>
+                  <th className="p-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Description</th>
+                  <th className="p-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Price</th>
+                  <th className="p-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700">
+              <tbody className="divide-y divide-slate-800/30">
                 {filteredList.map(s => (
-                  <tr key={s.id || s._id} className="hover:bg-slate-700/50 transition-colors">
-                    <td className="p-4 text-white font-medium">{s.name}</td>
-                    <td className="p-4 text-slate-300">{s.description}</td>
-                    <td className="p-4 text-green-300 font-bold">₹{Number(s.price).toFixed(2)}</td>
+                  <tr key={s.id || s._id} className="table-row">
                     <td className="p-4">
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => startEdit(s)} 
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all shadow-md font-medium"
-                        >
-                           Edit
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/20 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </div>
+                        <span className="text-sm font-medium text-white">{s.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm text-slate-400 max-w-xs truncate">{s.description}</td>
+                    <td className="p-4">
+                      <span className="text-sm font-bold text-emerald-400">₹{Number(s.price).toFixed(2)}</span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex gap-1.5">
+                        <button onClick={() => startEdit(s)} className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
                         </button>
-                        <button 
-                          onClick={() => remove(s.id || s._id)} 
-                          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 hover:scale-105 active:scale-95 transition-all shadow-md font-medium"
-                        >
-                           Delete
+                        <button onClick={() => remove(s.id || s._id)} className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
                         </button>
                       </div>
                     </td>
@@ -205,11 +185,11 @@ export default function Services() {
                 ))}
                 {filteredList.length === 0 && (
                   <tr>
-                    <td colSpan="4" className="p-8 text-center text-slate-400">
-                      <div className="text-6xl mb-4"></div>
-                      <div className="text-xl">
-                        {searchTerm ? 'No services found matching your search' : 'No services yet'}
-                      </div>
+                    <td colSpan="4" className="p-12 text-center">
+                      <svg className="w-12 h-12 text-slate-700 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      </svg>
+                      <div className="text-sm text-slate-500">{searchTerm ? 'No services found' : 'No services yet'}</div>
                     </td>
                   </tr>
                 )}
@@ -219,12 +199,10 @@ export default function Services() {
         )}
       </div>
 
-      {/* Stats Footer */}
-      <div className="bg-slate-800/90 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-slate-600">
-        <div className="flex items-center justify-between text-slate-300">
-          <span> Total Services: <strong className="text-white">{list.length}</strong></span>
-          <span> Showing: <strong className="text-white">{filteredList.length}</strong></span>
-        </div>
+      {/* Footer Stats */}
+      <div className="glass rounded-xl p-3 flex items-center justify-between text-xs text-slate-500">
+        <span>Total: <strong className="text-slate-300">{list.length}</strong></span>
+        <span>Showing: <strong className="text-slate-300">{filteredList.length}</strong></span>
       </div>
     </div>
   );
